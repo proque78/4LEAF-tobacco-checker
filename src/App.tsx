@@ -1,4 +1,4 @@
-
+import CloverLogo from "./assets/clover_.png";
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { TobaccoProduct, ScanResult, AppStatus } from './types';
 import { CSV_DATA, parseCSV } from './constants';
