@@ -182,8 +182,10 @@ const App: React.FC = () => {
                   <div className="h-px bg-slate-200/60"></div>
                   <div className="space-y-4">
                     <div>
-                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Description</p>
-                      <h4 className="font-black text-slate-900 text-lg leading-tight mt-1">{lastResult.product.tradeName}</h4>
+<p className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em]">Trade Name</p>
+<h4 className="font-black text-slate-900 text-lg leading-tight mt-1">
+  {lastResult.product.tradeName}
+</h4>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
