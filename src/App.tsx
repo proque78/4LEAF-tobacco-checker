@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+const PRODUCTS_LOOKUP = parseCSV(CSV_DATA);
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { TobaccoProduct, ScanResult, AppStatus } from "./types";
 import { CSV_DATA, parseCSV } from "./constants";
 
-const products = useMemo(() => parseCSV(CSV_DATA), []);
+const products = PRODUCTS_LOOKUP;
 import {
   Camera,
   History,
