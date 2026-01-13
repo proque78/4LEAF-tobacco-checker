@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { TobaccoProduct, ScanResult, AppStatus } from "./types";
 import { CSV_DATA, parseCSV } from "./constants";
+
+const products = useMemo(() => parseCSV(CSV_DATA), []);
 import {
   Camera,
   History,
