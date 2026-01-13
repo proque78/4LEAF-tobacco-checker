@@ -1,55 +1,153 @@
+// src/constants.ts
+import Papa from "papaparse";
+import type { TobaccoProduct } from "./types";
 
-import { TobaccoProduct } from './types';
+// ✅ Put your CSV file in: src/utl-2026-01-12.csv
+// or change the filename/path below to match your repo
+import CSV_TEXT from "./utl-2026-01-12.csv?raw";
 
-export const CSV_DATA = `"Trade Name","Packaging/Brand Style",UPC,"Carton Name","UPC (Carton or Roll)",Manufacturer
-"1839 Blue 100s Filtered Cigarettes","20 ct Box",879982001196,"10 pk Carton",879982001233,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Blue King Filtered Cigarettes","20 ct Box",879982000885,"10 pk Carton",879982000892,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Blue Premium (16 oz) Pipe Tobacco","1 ct Bag",879982002919,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Blue Premium (16 oz) Roll Your Own Tobacco","1 ct Bag",187700000988,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Blue Premium (6 oz) Pipe Tobacco","1 ct Bag",879982002858,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Blue Premium (6 oz) Roll Your Own Tobacco","1 ct Bag",187700000957,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red 100s Filtered Cigarettes","20 ct Box",879982001189,"10 pk Carton",879982001226,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red King Filtered Cigarettes","20 ct Box",879982000854,"10 pk Carton",879982000861,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red Premium (16 oz) Pipe Tobacco","1 ct Bag",879982002926,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red Premium (16 oz) Roll Your Own Tobacco","1 ct Bag",187700000971,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red Premium (6 oz) Pipe Tobacco","1 ct Bag",879982002865,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Red Premium (6 oz) Roll Your Own Tobacco","1 ct Bag",187700000940,,,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Silver 100s Filtered Cigarettes","20 ct Box",879982001202,"10 pk Carton",879982001240,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"1839 Silver King Filtered Cigarettes","20 ct Box",879982001158,"10 pk Carton",879982001165,"U.S. FLUE-CURED TOBACCO GROWERS, INC."
-"Basic 100s Filtered Cigarettes","20 ct Box",028200304025,"10 pk Carton",028200304018,"Philip Morris USA"
-"Basic Blue Pack 100s Filtered Cigarettes","20 ct Box",028200303622,"10 pk Carton",028200303615,"Philip Morris USA"
-"Marlboro 100s Filtered Cigarettes","20 ct Box",02836328,"10 pk Carton",028200136305,"Philip Morris USA"
-"Newport Non-Menthol 100s Filtered Cigarettes","20 ct Box",02665715,"10 pk Carton",026100806571,"R.J. Reynolds Tobacco Company"
-"Lucky Strike Red 100s Filtered Cigarettes","20 ct Box",043300109264,"10 pk Carton",043300109271,"R.J. Reynolds Tobacco Company"
-"Vuse Alto Golden Tobacco 5 % (1.8 mL) Closed E-Liquid Pods","2 ct Box",849205019345,"5 pk Carton",849205019352,"R.J. Reynolds Vapor Company"
-"JUUL Virginia Tobacco 5 % (0.7 mL) Closed E-Liquid JUULpods","4 ct Box",819913011429,,,"Juul Labs, Inc."
-"Zyn Original 6 mg Nicotine Pouches","15 ct Can",930057,"5 pk Roll",930156,"Swedish Match North America LLC"`;
+export const CSV_DATA = CSV_TEXT;
 
-export const parseCSV = (csv: string): Map<string, TobaccoProduct> => {
-  const lines = csv.split('\n');
-  const products = new Map<string, TobaccoProduct>();
-  
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    
-    const parts = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g);
-    if (!parts) continue;
-    
-    const clean = (s: string) => s?.replace(/^"|"$/g, '').trim() || '';
-    
-    const product: TobaccoProduct = {
-      tradeName: clean(parts[0]),
-      packagingStyle: clean(parts[1]),
-      upc: clean(parts[2]),
-      cartonName: clean(parts[3]),
-      cartonUpc: clean(parts[4]),
-      manufacturer: clean(parts[5]),
-    };
-    
-    if (product.upc) products.set(product.upc, product);
-    if (product.cartonUpc) products.set(product.cartonUpc, product);
+/* -----------------------------
+   Barcode helpers
+------------------------------ */
+
+/** Expand scientific notation like "8.79982001196E+11" -> "879982001196"
+ *  NOTE: If the CSV is rounded like "8.79982E+11", the missing digits are lost in the CSV.
+ */
+function expandScientific(raw: string): string {
+  const s = (raw ?? "").toString().trim();
+  if (!s) return "";
+
+  const v = s.replace(/^"|"$/g, "").trim();
+  const cleaned = v.replace(/\s+/g, "");
+
+  const m = cleaned.match(/^([+-]?\d+(?:\.\d+)?)[eE]([+-]?\d+)$/);
+  if (!m) return cleaned;
+
+  const mantissa = m[1];
+  const exp = parseInt(m[2], 10);
+
+  const unsigned = mantissa.replace(/^[+-]/, "");
+  const parts = unsigned.split(".");
+  const intPart = parts[0] || "0";
+  const fracPart = parts[1] || "";
+
+  const digits = (intPart + fracPart).replace(/^0+/, "") || "0";
+  const shift = exp - fracPart.length;
+
+  if (shift < 0) return digits; // barcodes shouldn't be decimals
+  return digits + "0".repeat(shift);
+}
+
+/** Clean a CSV cell into digits-only barcode */
+function cleanCsvBarcode(raw: string): string {
+  const expanded = expandScientific(raw);
+  return expanded.replace(/\D/g, "");
+}
+
+/** Normalize one barcode into multiple keys (UPC-A, EAN-13, GTIN-14 variants) */
+function barcodeKeys(raw: string): string[] {
+  const digits = (raw ?? "").toString().replace(/\D/g, "");
+  if (!digits) return [];
+
+  const keys = new Set<string>();
+  const add = (v: string) => v && keys.add(v);
+
+  add(digits);
+
+  // GTIN-14 -> also try stripping leading zeros / digits
+  if (digits.length === 14) {
+    add(digits.replace(/^0+/, ""));
+    add(digits.slice(1));
+    add(digits.slice(2));
   }
-  
-  return products;
-};
+
+  // EAN-13 starting with 0 -> UPC-A
+  if (digits.length === 13 && digits.startsWith("0")) {
+    add(digits.slice(1));
+  }
+
+  // UPC-A -> EAN-13
+  if (digits.length === 12) {
+    add("0" + digits);
+  }
+
+  // shorter codes (common when Excel strips leading zeros)
+  if (digits.length >= 8 && digits.length <= 11) {
+    const upc12 = digits.padStart(12, "0");
+    add(upc12);
+    add("0" + upc12);
+  }
+
+  return Array.from(keys).filter((k) => k.length >= 8 && k.length <= 14);
+}
+
+/* -----------------------------
+   CSV parsing
+------------------------------ */
+
+function getField(row: Record<string, any>, ...keys: string[]): string {
+  for (const k of keys) {
+    const val = row[k];
+    if (val !== undefined && val !== null && String(val).trim() !== "") {
+      return String(val).trim();
+    }
+  }
+  return "";
+}
+
+/**
+ * Returns a lookup Map where ANY match in:
+ *  - UPC
+ *  - UPC (Carton or Roll)
+ * is considered APPROVED
+ */
+export function parseCSV(csv: string): Map<string, TobaccoProduct> {
+  const lookup = new Map<string, TobaccoProduct>();
+
+  const parsed = Papa.parse<Record<string, any>>(csv, {
+    header: true,
+    skipEmptyLines: true,
+  });
+
+  if (parsed.errors?.length) {
+    // Don’t crash the app; log for debugging
+    console.warn("CSV parse warnings:", parsed.errors);
+  }
+
+  for (const row of parsed.data) {
+    // Handle slight header variations safely
+    const manufacturer = getField(row, "Manufacturer", "manufacturer");
+    const tradeName = getField(row, "Trade Name", "TradeName", "tradeName", "trade name");
+    const productType = getField(
+      row,
+      "Packaging/Brand Style",
+      "Packaging Brand Style",
+      "productType",
+      "Product Type",
+      "type"
+    );
+
+    // ✅ APPROVED sources (columns C & E in your file)
+    const upc = cleanCsvBarcode(getField(row, "UPC", "upc"));
+    const cartonUpc = cleanCsvBarcode(getField(row, "UPC (Carton or Roll)", "UPC Carton or Roll", "cartonUpc"));
+
+    // If both are blank, skip row
+    if (!upc && !cartonUpc) continue;
+
+    const product: TobaccoProduct = {
+      manufacturer,
+      tradeName,
+      upc,
+      cartonUpc,
+      productType,
+    };
+
+    // ✅ Add both UPC columns to lookup using normalized keys
+    for (const k of barcodeKeys(upc)) lookup.set(k, product);
+    for (const k of barcodeKeys(cartonUpc)) lookup.set(k, product);
+  }
+
+  return lookup;
+}
