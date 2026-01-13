@@ -9,11 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "lucide-react": "^0.460.0",
+    "papaparse": "^5.5.3",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "lucide-react": "^0.460.0"
+    "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
     "@vitejs/plugin-react": "^4.2.1",
