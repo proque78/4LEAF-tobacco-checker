@@ -328,7 +328,11 @@ const App: React.FC = () => {
              {/* Branded Identity Seal */}
              <div className="absolute top-10 left-0 right-0 flex justify-center">
                 <div className="flex items-center gap-2 bg-black/60 px-5 py-2 rounded-2xl backdrop-blur-lg border border-white/10">
-                   <img src="logo.png" className="w-5 h-5 opacity-90" alt="" />
+<img
+  src={CloverLogo}
+  className="w-5 h-5 opacity-90"
+  alt="4LEAF Clover"
+/>
                    <span className="text-white font-black uppercase text-[9px] tracking-[0.3em]">4LEAF INC. Auditing</span>
                 </div>
              </div>
