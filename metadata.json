@@ -1,0 +1,7 @@
+{
+  "name": "Tobacco Scout",
+  "description": "A high-performance barcode scanner for tobacco product compliance. Instantly verify UPCs against an approved product list to ensure regulatory compliance at retail locations.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
