@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#065f46">
     <meta name="description" content="4LEAF QR Code Approval Checker">
     <title>4LEAF QR Approval Checker</title>
@@ -24,6 +24,20 @@
     
     <!-- jsQR Library for QR scanning -->
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    
+    <style>
+        /* Prevent zoom on iOS */
+        input, select, textarea {
+            font-size: 16px !important;
+        }
+        
+        /* Ensure video takes full space */
+        video {
+            width: 100% !important;
+            height: 100% !important;
+            object-fit: cover !important;
+        }
+    </style>
 </head>
 <body>
     <div id="root"></div>
@@ -8855,7 +8869,6 @@
           const [scanning, setScanning] = useState(false);
           const [result, setResult] = useState(null);
           const [cameraError, setCameraError] = useState(null);
-          const [permissionGranted, setPermissionGranted] = useState(false);
           const videoRef = useRef(null);
           const canvasRef = useRef(null);
           const scanIntervalRef = useRef(null);
@@ -8864,71 +8877,72 @@
           const approvedItems = APPROVED_UPCS;
 
           const startScanning = async () => {
+            setCameraError(null);
+            
             try {
-              setCameraError(null);
-              console.log('Requesting camera access...');
-              
-              // Try different constraint combinations for better compatibility
-              const constraints = [
-                { video: { facingMode: 'environment' } },
-                { video: { facingMode: { exact: 'environment' } } },
-                { video: true }
-              ];
-              
-              let stream = null;
-              let lastError = null;
-              
-              for (const constraint of constraints) {
-                try {
-                  console.log('Trying constraint:', constraint);
-                  stream = await navigator.mediaDevices.getUserMedia(constraint);
-                  if (stream) {
-                    console.log('Camera stream obtained!');
-                    break;
-                  }
-                } catch (err) {
-                  console.log('Constraint failed:', err);
-                  lastError = err;
-                }
+              // Stop any existing stream first
+              if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+                streamRef.current = null;
               }
               
-              if (!stream) {
-                throw lastError || new Error('Unable to access camera');
-              }
+              // Request camera access with mobile-friendly constraints
+              const constraints = {
+                video: {
+                  facingMode: { ideal: 'environment' },
+                  width: { ideal: 1280 },
+                  height: { ideal: 720 }
+                },
+                audio: false
+              };
               
+              const stream = await navigator.mediaDevices.getUserMedia(constraints);
               streamRef.current = stream;
-              setPermissionGranted(true);
               
               if (videoRef.current) {
                 videoRef.current.srcObject = stream;
                 
-                // Wait for video to be ready
-                videoRef.current.onloadedmetadata = () => {
-                  console.log('Video metadata loaded');
-                  videoRef.current.play()
+                // Critical for mobile: set these attributes
+                videoRef.current.setAttribute('playsinline', 'true');
+                videoRef.current.setAttribute('autoplay', 'true');
+                videoRef.current.setAttribute('muted', 'true');
+                
+                // Wait for the video to be ready, then play
+                const playPromise = videoRef.current.play();
+                
+                if (playPromise !== undefined) {
+                  playPromise
                     .then(() => {
-                      console.log('Video playing');
+                      console.log('Video started playing');
                       setScanning(true);
-                      scanIntervalRef.current = setInterval(scanQRCode, 500);
+                      // Start scanning after a short delay to ensure video is ready
+                      setTimeout(() => {
+                        scanIntervalRef.current = setInterval(scanQRCode, 300);
+                      }, 500);
                     })
-                    .catch(err => {
-                      console.error('Play error:', err);
-                      setCameraError('Unable to start video playback: ' + err.message);
+                    .catch(error => {
+                      console.error('Play failed:', error);
+                      setCameraError('Failed to start video: ' + error.message);
+                      stopScanning();
                     });
-                };
+                }
               }
             } catch (error) {
               console.error('Camera error:', error);
-              let errorMsg = 'Unable to access camera. ';
               
+              let errorMsg = '';
               if (error.name === 'NotAllowedError') {
-                errorMsg += 'Please grant camera permission in your browser settings.';
+                errorMsg = 'Camera permission denied. Please allow camera access in your browser settings.';
               } else if (error.name === 'NotFoundError') {
-                errorMsg += 'No camera found on this device.';
+                errorMsg = 'No camera found on this device.';
               } else if (error.name === 'NotReadableError') {
-                errorMsg += 'Camera is already in use by another application.';
+                errorMsg = 'Camera is already in use. Please close other apps using the camera.';
+              } else if (error.name === 'OverconstrainedError') {
+                errorMsg = 'Camera does not support the required settings.';
+              } else if (error.name === 'SecurityError') {
+                errorMsg = 'Camera access blocked by security settings. Make sure you\'re using HTTPS.';
               } else {
-                errorMsg += error.message;
+                errorMsg = 'Camera error: ' + error.message;
               }
               
               setCameraError(errorMsg);
@@ -8936,8 +8950,6 @@
           };
 
           const stopScanning = () => {
-            console.log('Stopping scanner...');
-            
             if (scanIntervalRef.current) {
               clearInterval(scanIntervalRef.current);
               scanIntervalRef.current = null;
@@ -8946,7 +8958,6 @@
             if (streamRef.current) {
               streamRef.current.getTracks().forEach(track => {
                 track.stop();
-                console.log('Track stopped');
               });
               streamRef.current = null;
             }
@@ -8956,14 +8967,16 @@
             }
             
             setScanning(false);
-            setPermissionGranted(false);
           };
 
           const scanQRCode = () => {
-            if (!videoRef.current || !canvasRef.current) return;
+            if (!videoRef.current || !canvasRef.current || !scanning) {
+              return;
+            }
 
             const video = videoRef.current;
             
+            // Check if video is ready
             if (video.readyState !== video.HAVE_ENOUGH_DATA) {
               return;
             }
@@ -8971,6 +8984,7 @@
             const canvas = canvasRef.current;
             const context = canvas.getContext('2d');
 
+            // Set canvas size to match video
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
             
@@ -8978,23 +8992,22 @@
               return;
             }
             
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-            
             try {
+              context.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+              
               const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
                 inversionAttempts: "dontInvert",
               });
               
-              if (code) {
+              if (code && code.data) {
                 console.log('QR Code detected:', code.data);
                 const scannedValue = code.data.trim();
                 checkApproval(scannedValue);
                 stopScanning();
               }
             } catch (error) {
-              console.error('QR scanning error:', error);
+              console.error('Scan error:', error);
             }
           };
 
@@ -9051,45 +9064,45 @@
                       {!scanning ? (
                         <button
                           onClick={startScanning}
-                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-lg font-semibold shadow-md"
+                          className="w-full flex items-center justify-center gap-2 px-6 py-4 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors text-lg font-semibold shadow-md"
                         >
                           <Camera />
                           Start Scanning
                         </button>
                       ) : (
                         <div className="space-y-3">
-                          <div className="relative bg-black rounded-lg overflow-hidden shadow-lg">
+                          <div className="relative bg-black rounded-lg overflow-hidden shadow-lg" style={{minHeight: '300px'}}>
                             <video
                               ref={videoRef}
-                              className="w-full h-64 object-cover"
+                              className="w-full"
+                              style={{height: '300px', objectFit: 'cover'}}
                               playsInline
                               autoPlay
                               muted
                             />
-                            <div className="absolute inset-0 border-4 border-emerald-500 opacity-50 m-8"></div>
-                            {permissionGranted && (
-                              <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded">
-                                Camera Active
-                              </div>
-                            )}
+                            <div className="absolute inset-0 border-4 border-emerald-500 opacity-50 m-8 pointer-events-none"></div>
+                            <div className="absolute top-2 left-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded">
+                              Scanning...
+                            </div>
                           </div>
-                          <canvas ref={canvasRef} className="hidden" />
+                          <canvas ref={canvasRef} style={{display: 'none'}} />
                           <button
                             onClick={stopScanning}
-                            className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-medium"
+                            className="w-full px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 active:bg-red-800 transition-colors font-medium"
                           >
                             Stop Scanning
                           </button>
                           <p className="text-center text-sm text-gray-600">
-                            Position QR code within the frame
+                            Position QR code within the green frame
                           </p>
                         </div>
                       )}
                       
                       {cameraError && (
-                        <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                          <p className="font-semibold mb-1">Camera Error:</p>
+                        <div className="p-4 bg-red-50 border-2 border-red-300 rounded-lg text-red-700 text-sm">
+                          <p className="font-semibold mb-1">⚠️ Camera Error:</p>
                           <p>{cameraError}</p>
+                          <p className="mt-2 text-xs">Try: Chrome on Android or Safari on iPhone</p>
                         </div>
                       )}
                     </div>
@@ -9128,7 +9141,7 @@
 
                       <button
                         onClick={resetScan}
-                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors font-medium shadow-md"
+                        className="w-full flex items-center justify-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 active:bg-emerald-800 transition-colors font-medium shadow-md"
                       >
                         <RotateCcw />
                         Scan Another Code
@@ -9138,19 +9151,20 @@
                 </div>
 
                 <div className="bg-white rounded-xl shadow-md p-4 text-sm text-gray-600">
-                  <h3 className="font-semibold text-gray-800 mb-2">Instructions:</h3>
+                  <h3 className="font-semibold text-gray-800 mb-2">📱 Mobile Instructions:</h3>
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>Click "Start Scanning" to activate your camera</li>
-                    <li>Grant camera permission when prompted</li>
-                    <li>Point your camera at a QR code or barcode</li>
-                    <li>The app will automatically detect and verify the code</li>
+                    <li>Tap "Start Scanning" button</li>
+                    <li>Allow camera permission when prompted</li>
+                    <li>Hold phone steady and point at QR code</li>
+                    <li>Wait for automatic detection</li>
                   </ol>
-                  <div className="mt-3 text-xs text-gray-500">
-                    <p className="font-semibold">Troubleshooting:</p>
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>Make sure you're using Chrome (Android) or Safari (iPhone)</li>
-                      <li>Check that no other app is using your camera</li>
-                      <li>Try refreshing the page</li>
+                  <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs">
+                    <p className="font-semibold text-yellow-800">💡 Tips:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1 text-yellow-700">
+                      <li>Use Chrome (Android) or Safari (iPhone)</li>
+                      <li>Ensure good lighting</li>
+                      <li>Keep QR code in focus</li>
+                      <li>If it fails, try refreshing the page</li>
                     </ul>
                   </div>
                 </div>
