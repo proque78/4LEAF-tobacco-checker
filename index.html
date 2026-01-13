@@ -34,7 +34,7 @@
         // EMBEDDED LOGO (Base64)
         const LOGO_DATA = "data:image/png;base64,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";
         
-        // EMBEDDED APPROVED UPCs (8783 items)
+        // EMBEDDED APPROVED UPCs
         const APPROVED_UPCS = [
   "000012",
   "000014",
@@ -8855,60 +8855,140 @@
           const [scanning, setScanning] = useState(false);
           const [result, setResult] = useState(null);
           const [cameraError, setCameraError] = useState(null);
+          const [permissionGranted, setPermissionGranted] = useState(false);
           const videoRef = useRef(null);
           const canvasRef = useRef(null);
           const scanIntervalRef = useRef(null);
+          const streamRef = useRef(null);
 
           const approvedItems = APPROVED_UPCS;
 
           const startScanning = async () => {
             try {
               setCameraError(null);
-              const stream = await navigator.mediaDevices.getUserMedia({ 
-                video: { facingMode: 'environment' } 
-              });
+              console.log('Requesting camera access...');
+              
+              // Try different constraint combinations for better compatibility
+              const constraints = [
+                { video: { facingMode: 'environment' } },
+                { video: { facingMode: { exact: 'environment' } } },
+                { video: true }
+              ];
+              
+              let stream = null;
+              let lastError = null;
+              
+              for (const constraint of constraints) {
+                try {
+                  console.log('Trying constraint:', constraint);
+                  stream = await navigator.mediaDevices.getUserMedia(constraint);
+                  if (stream) {
+                    console.log('Camera stream obtained!');
+                    break;
+                  }
+                } catch (err) {
+                  console.log('Constraint failed:', err);
+                  lastError = err;
+                }
+              }
+              
+              if (!stream) {
+                throw lastError || new Error('Unable to access camera');
+              }
+              
+              streamRef.current = stream;
+              setPermissionGranted(true);
               
               if (videoRef.current) {
                 videoRef.current.srcObject = stream;
-                videoRef.current.play();
-                setScanning(true);
-                scanIntervalRef.current = setInterval(scanQRCode, 500);
+                
+                // Wait for video to be ready
+                videoRef.current.onloadedmetadata = () => {
+                  console.log('Video metadata loaded');
+                  videoRef.current.play()
+                    .then(() => {
+                      console.log('Video playing');
+                      setScanning(true);
+                      scanIntervalRef.current = setInterval(scanQRCode, 500);
+                    })
+                    .catch(err => {
+                      console.error('Play error:', err);
+                      setCameraError('Unable to start video playback: ' + err.message);
+                    });
+                };
               }
             } catch (error) {
-              setCameraError('Unable to access camera. Please ensure you\'ve granted camera permissions.');
               console.error('Camera error:', error);
+              let errorMsg = 'Unable to access camera. ';
+              
+              if (error.name === 'NotAllowedError') {
+                errorMsg += 'Please grant camera permission in your browser settings.';
+              } else if (error.name === 'NotFoundError') {
+                errorMsg += 'No camera found on this device.';
+              } else if (error.name === 'NotReadableError') {
+                errorMsg += 'Camera is already in use by another application.';
+              } else {
+                errorMsg += error.message;
+              }
+              
+              setCameraError(errorMsg);
             }
           };
 
           const stopScanning = () => {
-            if (videoRef.current && videoRef.current.srcObject) {
-              const tracks = videoRef.current.srcObject.getTracks();
-              tracks.forEach(track => track.stop());
-              videoRef.current.srcObject = null;
-            }
+            console.log('Stopping scanner...');
+            
             if (scanIntervalRef.current) {
               clearInterval(scanIntervalRef.current);
+              scanIntervalRef.current = null;
             }
+            
+            if (streamRef.current) {
+              streamRef.current.getTracks().forEach(track => {
+                track.stop();
+                console.log('Track stopped');
+              });
+              streamRef.current = null;
+            }
+            
+            if (videoRef.current) {
+              videoRef.current.srcObject = null;
+            }
+            
             setScanning(false);
+            setPermissionGranted(false);
           };
 
           const scanQRCode = () => {
             if (!videoRef.current || !canvasRef.current) return;
 
             const video = videoRef.current;
+            
+            if (video.readyState !== video.HAVE_ENOUGH_DATA) {
+              return;
+            }
+
             const canvas = canvasRef.current;
             const context = canvas.getContext('2d');
 
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+            
+            if (canvas.width === 0 || canvas.height === 0) {
+              return;
+            }
+            
             context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
             const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
             
             try {
-              const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+              const code = window.jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+              });
               
               if (code) {
+                console.log('QR Code detected:', code.data);
                 const scannedValue = code.data.trim();
                 checkApproval(scannedValue);
                 stopScanning();
@@ -8983,8 +9063,15 @@
                               ref={videoRef}
                               className="w-full h-64 object-cover"
                               playsInline
+                              autoPlay
+                              muted
                             />
                             <div className="absolute inset-0 border-4 border-emerald-500 opacity-50 m-8"></div>
+                            {permissionGranted && (
+                              <div className="absolute top-2 right-2 bg-emerald-600 text-white text-xs px-2 py-1 rounded">
+                                Camera Active
+                              </div>
+                            )}
                           </div>
                           <canvas ref={canvasRef} className="hidden" />
                           <button
@@ -9001,7 +9088,8 @@
                       
                       {cameraError && (
                         <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                          {cameraError}
+                          <p className="font-semibold mb-1">Camera Error:</p>
+                          <p>{cameraError}</p>
                         </div>
                       )}
                     </div>
@@ -9053,10 +9141,18 @@
                   <h3 className="font-semibold text-gray-800 mb-2">Instructions:</h3>
                   <ol className="list-decimal list-inside space-y-1">
                     <li>Click "Start Scanning" to activate your camera</li>
+                    <li>Grant camera permission when prompted</li>
                     <li>Point your camera at a QR code or barcode</li>
                     <li>The app will automatically detect and verify the code</li>
-                    <li>View the approval status instantly</li>
                   </ol>
+                  <div className="mt-3 text-xs text-gray-500">
+                    <p className="font-semibold">Troubleshooting:</p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>Make sure you're using Chrome (Android) or Safari (iPhone)</li>
+                      <li>Check that no other app is using your camera</li>
+                      <li>Try refreshing the page</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
