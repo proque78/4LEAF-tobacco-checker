@@ -97,10 +97,11 @@ const App: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 flex items-center justify-center bg-slate-50 rounded-xl overflow-hidden">
-               <img 
-                src="logo.png" 
-                alt="4LEAF Clover" 
-                className="w-full h-full object-contain p-1" 
+<img
+  src={CloverLogo}
+  alt="4LEAF Clover"
+  className="w-full h-full object-contain p-1"
+/>
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   e.currentTarget.parentElement!.innerHTML = `
