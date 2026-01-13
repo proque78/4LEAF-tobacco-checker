@@ -1,3 +1,4 @@
+import CSV_TEXT from "./utl-2026-01-12.csv?raw";
 // src/constants.ts
 import Papa from "papaparse";
 import type { TobaccoProduct } from "./types";
