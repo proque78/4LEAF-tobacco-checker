@@ -69,7 +69,7 @@ function buildApprovedLookupFromCSV(csv: string): Map<string, TobaccoProduct> {
 }
 
 const App: React.FC = () => {
-  const products = useMemo(() => buildApprovedLookupFromCSV(CSV_DATA), []);
+ const products = PRODUCTS_LOOKUP;
 
   const [status, setStatus] = useState<AppStatus>(AppStatus.IDLE);
   const [lastResult, setLastResult] = useState<ScanResult | null>(null);
