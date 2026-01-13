@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { TobaccoProduct, ScanResult, AppStatus } from "./types";
 import { CSV_DATA, parseCSV } from "./constants";
 
